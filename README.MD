@@ -69,7 +69,7 @@ python main.py --excel "MART-2025-NOBET.xlsx" --output "nobetler"
 
 - Excel dosya yolu: MART-2025-NOBET.xlsx
 - Çıktı klasörü: nobetler
-- İşlene
+- İşlenecek satır aralığı: Pandas indeksinde 0-32 (Excel'de 2-33. satırlar)
 - İsimlerin bulunduğu sütun aralığı: B (index 1) ile J (index 10)
 
 ## Diğer parametreler için:
