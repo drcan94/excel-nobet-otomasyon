@@ -39,7 +39,7 @@ openpyxl
 Bu repository'i klonlayın:
 
 ```bash
-git clone https://github.com/kullanici-adiniz/excel-nobet-otomasyon.git
+git clone https://github.com/drcan94/excel-nobet-otomasyon.git
 cd excel-nobet-otomasyon
 ```
 
@@ -74,10 +74,10 @@ python main.py --excel "MART-2025-NOBET.xlsx" --output "nobetler"
 
 ## Diğer parametreler için:
 
---start_row: İşlenecek başlangıç satırı (varsayılan: 0)
---end_row: İşlenecek bitiş satırı (varsayılan: 32)
---name_start_col: İsimlerin bulunduğu başlangıç sütunu (varsayılan: 1)
---name_end_col: İsimlerin bulunduğu bitiş sütunu (varsayılan: 10)
+- --start_row: İşlenecek başlangıç satırı (varsayılan: 0)
+- --end_row: İşlenecek bitiş satırı (varsayılan: 32)
+- --name_start_col: İsimlerin bulunduğu başlangıç sütunu (varsayılan: 1)
+- --name_end_col: İsimlerin bulunduğu bitiş sütunu (varsayılan: 10)
 
 ## Çalışma Mantığı
 
