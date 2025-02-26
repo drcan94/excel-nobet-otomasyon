@@ -1,6 +1,6 @@
 # Excel Nöbet Listesi Otomasyon Scripti
 
-Bu proje, Python kullanarak belirtilen bir Excel dosyasındaki nöbet listesi verilerini işleyen ve her bir kişi için nöbet tarihleri, günleri ile çalıştığı alanları içeren görsel tablolar (PNG formatında) oluşturan bir script içerir.
+Bu proje, Python kullanarak belirtilen bir Excel dosyasındaki nöbet listesi verilerini işleyen ve her bir kişi için nöbet tarihleri, günleri ile çalıştığı alanları içeren görsel tablolar (PNG formatında) oluşturan bir script içerir. Ayrıca telefonlara kolayca yüklenebilen iCalendar (.ics) formatında takvim dosyaları oluşturarak nöbet hatırlatıcıları ayarlar.
 
 ## Özellikler
 
@@ -10,6 +10,7 @@ Bu proje, Python kullanarak belirtilen bir Excel dosyasındaki nöbet listesi ve
   - B-J sütunlarında nöbetçi isimleri ve bu sütunların ilk satırında (B1:J1) alan başlıkları bulunur.
 - **Koşullu Arama:** Her satırda, belirli bir ismi (ör. "BURAK CAN") arar; eşleşen satırlarda, o günün tarihini, Türkçe gün adını ve ilgili alan başlığını kaydeder.
 - **Görsel Çıktı:** Her kişi için modern görünümlü tablolar oluşturur ve PNG dosyası olarak belirtilen klasöre kaydeder.
+- **Takvim Hatırlatıcıları:** Her kişi için nöbet tarihinden bir gün önce saat 14:00'da hatırlatıcı içeren iCalendar (.ics) dosyaları oluşturur. Bu dosyalar, telefonlardaki takvim uygulamalarına kolayca aktarılabilir.
 - **Üretim Hazır Kod:** `main.py` içerisinde yer alan script, argümanlar sayesinde farklı Excel dosyaları veya veri aralıkları ile esnek biçimde kullanılabilir.
 
 ## Gereksinimler
@@ -19,6 +20,8 @@ Bu proje, Python kullanarak belirtilen bir Excel dosyasındaki nöbet listesi ve
   - pandas
   - matplotlib
   - openpyxl
+  - icalendar
+  - pytz
 
 ## Kütüphaneleri yüklemek için:
 
@@ -32,6 +35,8 @@ pip install -r requirements.txt
 pandas
 matplotlib
 openpyxl
+icalendar
+pytz
 ```
 
 ## Kurulum
@@ -65,6 +70,12 @@ Script'i çalıştırmak için:
 python main.py --excel "MART-2025-NOBET.xlsx" --output "nobetler"
 ```
 
+Takvim dosyalarını da oluşturmak için:
+
+```bash
+python main.py --excel "MART-2025-NOBET.xlsx" --output "nobetler" --create_calendar
+```
+
 ## Varsayılan ayarlar:
 
 - Excel dosya yolu: MART-2025-NOBET.xlsx
@@ -78,6 +89,7 @@ python main.py --excel "MART-2025-NOBET.xlsx" --output "nobetler"
 - --end_row: İşlenecek bitiş satırı (varsayılan: 32)
 - --name_start_col: İsimlerin bulunduğu başlangıç sütunu (varsayılan: 1)
 - --name_end_col: İsimlerin bulunduğu bitiş sütunu (varsayılan: 10)
+- --create_calendar: Takvim dosyaları (.ics) oluştur
 
 ## Çalışma Mantığı
 
@@ -88,10 +100,31 @@ python main.py --excel "MART-2025-NOBET.xlsx" --output "nobetler"
 2- Veri İşleme:
   - Her satır için tarih, Türkçe gün adı ve ilgili sütun başlığı (alan) alınır.
   - Hücre değerleri temizlenip, parantez içindeki ek bilgilerin kaldırılması sağlanır.
-  - Her   geçerli isim için, kayıtlar bir sözlükte toplanır.
+  - Her geçerli isim için, kayıtlar bir sözlükte toplanır.
 
 3- Görsel Çıktı Oluşturma:
   - Her kişi için matplotlib kullanılarak modern bir tablo oluşturulur ve PNG olarak çıktı klasörüne kaydedilir.
+
+4- Takvim Dosyaları Oluşturma (Opsiyonel):
+  - Her kişi için nöbet zamanlarını içeren iCalendar (.ics) dosyaları oluşturulur.
+  - Her nöbet için, nöbet gününden bir gün önce saat 14:00'da tetiklenecek bir hatırlatıcı eklenir.
+  - Dosyalar, "nobetler/calendar" klasörüne kaydedilir.
+
+## Takvim Dosyalarını Telefonunuza Aktarmak
+
+Oluşturulan .ics dosyaları, şu adımlarla telefonunuza aktarılabilir:
+
+1. Oluşturulan .ics dosyasını telefonunuza gönderin (e-posta, mesaj, vb.)
+2. Telefonunuzda dosyayı açın
+3. Takvim uygulamanız dosyayı açacak ve etkinlikleri içe aktarmak isteyip istemediğinizi soracaktır
+4. İçe aktarmayı onaylayın
+5. Tüm nöbet etkinlikleri takvime eklenir ve otomatik olarak nöbetten bir gün önce saat 14:00'da hatırlatıcı ayarlanır
+
+Desteklenen takvim uygulamaları:
+- Google Takvim
+- Apple Takvim
+- Outlook
+- Ve diğer iCalendar (.ics) desteği olan takvim uygulamaları
 
 ## Katkıda Bulunma
 

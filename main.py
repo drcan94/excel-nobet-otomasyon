@@ -3,7 +3,9 @@ import re
 import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
-from datetime import datetime
+from datetime import datetime, timedelta
+from icalendar import Calendar, Event, Alarm
+import pytz
 
 
 def turkish_day_name(date_obj):
@@ -164,6 +166,109 @@ def create_png_tables(schedule_dict, output_folder):
             plt.close()
 
 
+def create_ics_files(schedule_dict, output_folder):
+    """
+    Her kişi için nöbet hatırlatıcılarını içeren iCalendar (.ics) dosyaları oluşturur.
+
+    Parametreler:
+      - schedule_dict: İşlenmiş nöbet kayıtlarını içeren sözlük.
+      - output_folder: ICS dosyalarının kaydedileceği klasör.
+    """
+    # Çıktı klasörü içinde "calendar" alt klasörü oluştur
+    calendar_folder = os.path.join(output_folder, "calendar")
+    os.makedirs(calendar_folder, exist_ok=True)
+
+    # Türkiye zaman dilimi
+    tz = pytz.timezone("Europe/Istanbul")
+
+    for person_key, info in schedule_dict.items():
+        original_name = info["original"]
+        records = info["records"]
+
+        # Takvim nesnesi oluştur
+        cal = Calendar()
+        cal.add("prodid", "-//Nöbet Takvimi//drcan94.github.io//")
+        cal.add("version", "2.0")
+        cal.add("x-wr-calname", f"{original_name} Nöbet Takvimi")
+
+        # Kayıtları tarihe göre sırala
+        def sort_key(item):
+            try:
+                return datetime.strptime(item[0].split(" - ")[0], "%d.%m.%Y")
+            except Exception:
+                return datetime.min
+
+        records.sort(key=sort_key)
+
+        # Her nöbet için etkinlik oluştur
+        for record in records:
+            try:
+                date_str = record[0].split(" - ")[0]  # "dd.mm.yyyy" formatı
+                area_name = record[1]
+
+                # Nöbet tarihi
+                duty_date = datetime.strptime(date_str, "%d.%m.%Y")
+
+                # Nöbet başlangıç saati (sabah 08:00 olarak ayarla)
+                duty_start = duty_date.replace(hour=8, minute=0, second=0)
+                # Nöbet süresi 24 saat (ertesi gün aynı saatte bitiş)
+                duty_end = duty_start + timedelta(days=1)
+
+                # Etkinlik oluştur
+                event = Event()
+                event.add("summary", f"NÖBET: {area_name}")
+                event.add(
+                    "description", f"{original_name} için {area_name} alanında nöbet"
+                )
+
+                # Normal etkinlik (tüm gün değil, 24 saatlik)
+                event.add("dtstart", duty_start)
+                event.add("dtend", duty_end)
+
+                # Benzersiz ID oluştur
+                event_id = f"{slugify_name(original_name)}-{date_str}-{slugify_name(area_name)}"
+                event.add("uid", event_id)
+
+                # Bir gün önce saat 14:00'da hatırlatıcı ekle
+                alarm = Alarm()
+                alarm.add("action", "DISPLAY")
+                alarm.add(
+                    "description", f"HATIRLATMA: Yarın {area_name} alanda nöbetin var!"
+                )
+
+                # Hatırlatıcı zamanını hesapla: nöbetin bir gün öncesi saat 14:00
+                reminder_date = duty_start - timedelta(days=1)
+                reminder_time = reminder_date.replace(hour=14, minute=0, second=0)
+
+                # Hatırlatıcı ayarları (hatırlatıcı zamanı ile etkinliğin başlangıç zamanı arasındaki fark)
+                trigger_delta = reminder_time - duty_start
+                alarm.add("trigger", trigger_delta)
+
+                # Alarmı etkinliğe ekle
+                event.add_component(alarm)
+
+                # Etkinliği takvime ekle
+                cal.add_component(event)
+
+            except Exception as e:
+                print(f"Takvim etkinliği oluştururken hata: {e} -> {record}")
+
+        # Takvim dosyasını kaydet
+        if len(cal.subcomponents) > 0:  # Etkinlik varsa
+            filename = slugify_name(original_name) + ".ics"
+            filepath = os.path.join(calendar_folder, filename)
+
+            with open(filepath, "wb") as f:
+                f.write(cal.to_ical())
+            print(f"{original_name} için takvim dosyası oluşturuldu: {filepath}")
+            print(
+                f"  * Nöbet etkinliği 08:00'dan başlayıp 24 saat sürecek şekilde ayarlandı."
+            )
+            print(
+                f"  * Hatırlatıcılar nöbetten 1 gün önce saat 14:00'da çalacak şekilde ayarlandı."
+            )
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Excel nöbet listesi scripti. Belirtilen Excel dosyasından nöbet bilgilerini okuyarak her kişi için PNG dosyası oluşturur."
@@ -204,6 +309,11 @@ def main():
         default=10,
         help="İsimlerin bulunduğu bitiş sütunu indeksi (varsayılan: 10, J sütunu)",
     )
+    parser.add_argument(
+        "--create_calendar",
+        action="store_true",
+        help="Nöbet hatırlatıcıları için iCalendar (.ics) dosyaları oluştur",
+    )
     args = parser.parse_args()
 
     schedule_dict = process_excel(
@@ -214,6 +324,17 @@ def main():
     else:
         create_png_tables(schedule_dict, args.output)
         print(f"\nTüm PNG dosyaları '{args.output}' klasöründe oluşturuldu.")
+
+        # Takvim dosyaları oluştur
+        if args.create_calendar:
+            create_ics_files(schedule_dict, args.output)
+            cal_folder = os.path.join(args.output, "calendar")
+            print(f"\nTüm takvim dosyaları '{cal_folder}' klasöründe oluşturuldu.")
+            print("\nKullanım: Bu .ics dosyaları telefonunuzun takvim uygulamasına")
+            print("yüklenebilir (Google Takvim, Apple Takvim, Outlook vb.). ")
+            print(
+                "Böylece her nöbetten bir gün önce saat 14:00'da hatırlatıcı alacaksınız."
+            )
 
 
 if __name__ == "__main__":
